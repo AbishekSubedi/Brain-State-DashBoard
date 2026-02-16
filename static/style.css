@@ -1,0 +1,18 @@
+* {
+    box-sizing: border-box;
+    font-family: cursive;
+    /* background-color: black;
+    color: white; */
+}
+
+.header-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+}
+
+.nav {
+    display: flex;
+    gap: 12px;
+}

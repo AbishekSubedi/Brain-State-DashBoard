@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
+    <title>Brain State DashBoard</title>
+</head>
+<body>
+    <header>
+        <div class="header-container">
+          <h1>Welcome to the state of mind!!</h1>
+      
+          <nav class="nav">
+            <a class="nav-link" href="/">Home</a>
+            <a class="nav-link" href="/about">About</a>
+            <a class="nav-link" href="/projects">Project Details</a>
+          </nav>
+        </div>
+      </header>
+      <main>
+        <div class="dashboard-container">
+            <h2>Brain State Dashboard</h2>
+            <p>Here you can find insights and visualizations about your brain state.</p>
+            <!-- Add your dashboard content here -->
+             <div class="graph">
+                <!-- live graph of brain state data -->
+             </div>
+             <div class="change-state-container">
+                <div class="state-change">somekind of graph here</div>
+                <div class="explain">explain the graph in this part</div>
+             </div>
+        </div>
+      </main>
+      <footer></footer>
+</body>
+</html>
