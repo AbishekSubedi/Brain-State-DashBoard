@@ -25,8 +25,7 @@
             <p>
                 This dashboard visualizes EEG brain-wave signals and estimates cognitive states such as focus, relaxation, and stress.
                 It supports research on brain waves and frequencies and combines lightweight machine learning with clear visualizations
-                to show how mental state changes over time. Data shown here is sample data; connect your EMOTIV headset or data source
-                to view live signals.
+                to show how mental state changes over time. Data is loaded from the Emotiv Sample Data (EDF) dataset; choose subject and session below.
             </p>
         </section>
 
@@ -34,6 +33,13 @@
             <h2>Graph: EEG</h2>
             <div class="graph-wrapper">
                 <canvas id="eegChart" aria-label="EEG signal over time"></canvas>
+            </div>
+            <div class="eeg-source">
+                <span class="source-params">
+                    <label>Subject <input type="number" id="eegSubject" min="1" max="30" value="1" class="source-input"></label>
+                    <label>Session <input type="number" id="eegSession" min="1" max="4" value="1" class="source-input"></label>
+                </span>
+                <button type="button" id="eegLoadBtn" class="load-btn" onclick="if(window.doLoadEeg){window.doLoadEeg();}">Load</button>
             </div>
             <div class="eeg-bands">
                 <label class="band-checkbox"><input type="checkbox" name="band" value="alpha" checked> Alpha</label>
@@ -55,8 +61,8 @@
             <div class="explain-state">
                 <h3>Explain the state</h3>
                 <p id="stateExplanation" class="state-explanation">
-                    Toggle EEG bands above and view the graph. When real data is connected, this area will show an interpretation
-                    of your current mental state (e.g. focused, relaxed, stressed) based on band activity.
+                    Toggle EEG bands above and view the graph. This area will show an interpretation
+                    of mental state (e.g. focused, relaxed) based on band activity once the classifier is added.
                 </p>
             </div>
         </section>
@@ -66,6 +72,6 @@
         <p>Brain State Dashboard — Research &amp; visualization only. Not for medical diagnosis or treatment.</p>
     </footer>
 
-    <script src="{{ request.url_for('static', path='dashboard.js') }}"></script>
+    <script src="{{ request.url_for('static', path='dashboard.js') }}?v=5"></script>
 </body>
 </html>

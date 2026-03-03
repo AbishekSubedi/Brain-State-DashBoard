@@ -9,6 +9,8 @@ Jinja2==3.1.6
 MarkupSafe==3.0.3
 numpy==2.4.2
 pandas==3.0.0
+scipy>=1.11.0
+mne>=1.6.0
 pydantic==2.12.5
 pydantic_core==2.41.5
 python-dateutil==2.9.0.post0

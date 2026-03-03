@@ -124,6 +124,51 @@ body {
     height: 100% !important;
 }
 
+.eeg-source {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 20px;
+    margin-bottom: 12px;
+}
+
+.source-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--muted);
+}
+
+.source-option input { accent-color: var(--accent); }
+
+.source-params { display: flex; gap: 12px; }
+
+.source-params label { font-size: 0.85rem; color: var(--muted); }
+
+.source-input {
+    width: 3.5rem;
+    margin-left: 4px;
+    padding: 4px 6px;
+    background: var(--surface);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 4px;
+    color: var(--text);
+}
+
+.load-btn {
+    padding: 6px 14px;
+    font-size: 0.85rem;
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+}
+
+.load-btn:hover { filter: brightness(1.1); }
+
 .eeg-bands {
     display: flex;
     flex-wrap: wrap;

@@ -1,6 +1,5 @@
 import uvicorn
-import numpy as np
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
@@ -15,30 +14,62 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 
-def generate_sample_eeg(seconds: float = 10.0, sample_rate: int = 128) -> dict:
-    """Generate synthetic EEG-like data for Alpha, Beta, Gamma, Delta bands.
-    Replace this with real EMOTIV/EEG data when available."""
-    n = int(seconds * sample_rate)
-    t = np.linspace(0, seconds, n)
-    # Band frequencies (Hz): Delta 0.5-4, Theta 4-8, Alpha 8-12, Beta 12-30, Gamma 30-45
-    rng = np.random.default_rng(42)
-    alpha = np.sin(2 * np.pi * 10 * t) * 0.5 + rng.normal(0, 0.05, n)
-    beta = np.sin(2 * np.pi * 20 * t) * 0.4 + rng.normal(0, 0.05, n)
-    gamma = np.sin(2 * np.pi * 38 * t) * 0.3 + rng.normal(0, 0.04, n)
-    delta = np.sin(2 * np.pi * 2 * t) * 0.6 + rng.normal(0, 0.06, n)
-    return {
-        "time": t.tolist(),
-        "alpha": alpha.tolist(),
-        "beta": beta.tolist(),
-        "gamma": gamma.tolist(),
-        "delta": delta.tolist(),
-    }
-
-
 @app.get("/api/eeg/sample")
-async def get_sample_eeg(seconds: float = 10.0, sample_rate: int = 128):
-    """Sample EEG data for the graph. Swap this for real data source when ready."""
-    return generate_sample_eeg(seconds=seconds, sample_rate=sample_rate)
+async def get_eeg_data(
+    subject: int = 1,
+    session: int = 1,
+    max_duration_sec: float = 60.0,
+    sample_rate: int = 128,
+):
+    """
+    EEG band time series from Emotiv Sample Data (EDF).
+    subject (1–30), session (1–4), max_duration_sec, sample_rate (downsampling).
+    """
+    try:
+        from pipeline.loaders import (
+            list_emotiv_edf_files,
+            emotiv_edf_to_band_time_series,
+            DEFAULT_DATA_DIR,
+        )
+    except ImportError as e:
+        raise HTTPException(status_code=500, detail=f"Pipeline/EDF not available: {e}") from e
+    files = list_emotiv_edf_files(DEFAULT_DATA_DIR)
+    if not files:
+        raise HTTPException(
+            status_code=404,
+            detail="No EDF files found. Place data under 'Emotiv Sample Data/S001/S001E01.edf' etc.",
+        )
+    subj_id = f"S{subject:03d}"
+    sess_id = f"E{session:02d}"
+    path = None
+    for s, e, p in files:
+        if s == subj_id and e == sess_id:
+            path = p
+            break
+    if path is None:
+        path = files[0][2]
+    out = emotiv_edf_to_band_time_series(
+        path,
+        max_duration_sec=max_duration_sec if max_duration_sec > 0 else None,
+        target_sfreq=min(sample_rate, 250),
+    )
+    return out
+
+
+@app.get("/api/eeg/files")
+async def list_eeg_files():
+    """List available real EDF files (subject, session, path) for the dashboard."""
+    try:
+        from pipeline.loaders import list_emotiv_edf_files, DEFAULT_DATA_DIR
+    except ImportError:
+        return {"files": [], "error": "Pipeline not available"}
+    files = list_emotiv_edf_files(DEFAULT_DATA_DIR)
+    return {
+        "files": [
+            {"subject": s, "session": e, "path": str(p)}
+            for s, e, p in files
+        ],
+    }
 
 
 @app.get("/", response_class=HTMLResponse)

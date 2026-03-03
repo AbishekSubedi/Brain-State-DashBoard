@@ -40,6 +40,8 @@ The endpoint `/api/eeg/sample` currently returns synthetic EEG-like band data:
 
 When you have real EMOTIV/EEG data, update the implementation of `generate_sample_eeg` / `/api/eeg/sample` in `main.py` to return the same JSON shape using your live or recorded signals. The frontend graph and layout will work without changes.
 
+**Dataset and pipeline:** For recommended public EEG datasets (relaxation/concentration, stress) and step-by-step process (download → load → band power → classifier → API), see **[docs/DATASETS_AND_PIPELINE.md](docs/DATASETS_AND_PIPELINE.md)**. A small `pipeline/` module (loaders, band-power features) is included to get started.
+
 ## Planned Features
 - EEG signal visualization (time-domain and frequency bands)
 - Cognitive state classification using simple machine learning models
