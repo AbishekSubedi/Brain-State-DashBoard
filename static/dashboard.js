@@ -2,7 +2,6 @@
     var chart = null;
     var eegData = null;
 
-    // Expose Load button handler immediately so onclick works even if the rest of the script fails
     window.doLoadEeg = function doLoadEeg() {
         var loadBtn = document.getElementById('eegLoadBtn');
         var subjectEl = document.getElementById('eegSubject');
@@ -13,34 +12,50 @@
             loadBtn.disabled = true;
             loadBtn.textContent = 'Loading…';
         }
-        var url = '/api/eeg/sample?subject=' + subject + '&session=' + session + '&max_duration_sec=60&sample_rate=128';
         var reenable = function () {
             if (loadBtn) {
                 loadBtn.disabled = false;
                 loadBtn.textContent = 'Load';
             }
         };
-        fetch(url)
-            .then(function (r) {
-                if (!r.ok) throw new Error('Request failed: ' + r.status);
-                return r.json();
+        var eegUrl = '/api/eeg/sample?subject=' + subject + '&session=' + session + '&max_duration_sec=60&sample_rate=128';
+        var stateUrl = '/api/state?subject=' + subject + '&session=' + session + '&max_duration_sec=60';
+        Promise.all([fetch(eegUrl).then(function (r) { if (!r.ok) throw new Error('EEG: ' + r.status); return r.json(); }), fetch(stateUrl).then(function (r) { if (!r.ok) throw new Error('State: ' + r.status); return r.json(); })])
+            .then(function (results) {
+                var data = results[0];
+                var state = results[1];
+                if (data && Array.isArray(data.time)) {
+                    eegData = data;
+                    if (typeof window.eegChartUpdate === 'function') window.eegChartUpdate();
+                }
+                if (state) renderState(state);
             })
-            .then(function (data) {
-                if (!data || !Array.isArray(data.time)) throw new Error('Invalid data');
-                eegData = data;
-                if (typeof window.eegChartUpdate === 'function') window.eegChartUpdate();
-            })
-            .catch(function (err) { console.error('EEG load failed', err); })
+            .catch(function (err) { console.error('Load failed', err); renderState(null); })
             .finally(reenable);
         setTimeout(reenable, 120000);
     };
 
-    function runWhenReady(fn) {
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', fn);
-        } else {
-            fn();
+    function renderState(state) {
+        var summaryEl = document.getElementById('stateSummary');
+        var explanationEl = document.getElementById('stateExplanation');
+        var disclaimerEl = document.getElementById('stateDisclaimer');
+        if (!summaryEl) return;
+        if (!state) {
+            summaryEl.textContent = '—';
+            if (explanationEl) explanationEl.textContent = 'Load a session to see the inferred state.';
+            if (disclaimerEl) disclaimerEl.style.display = 'none';
+            return;
         }
+        var label = state.predicted_state || '—';
+        var conf = state.confidence != null ? Math.round(state.confidence * 100) + '%' : '';
+        summaryEl.textContent = label + (conf ? ' (' + conf + ')' : '');
+        if (explanationEl) explanationEl.textContent = state.explanation || '';
+        if (disclaimerEl) disclaimerEl.style.display = 'block';
+    }
+
+    function runWhenReady(fn) {
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn);
+        else fn();
     }
 
     function getColor(band) {
@@ -82,18 +97,12 @@
         var visible = { alpha: true, beta: true, gamma: true, delta: false };
         chart = new Chart(ctx, {
             type: 'line',
-            data: {
-                labels: eegData ? eegData.time : [],
-                datasets: buildDatasets(visible)
-            },
+            data: { labels: eegData ? eegData.time : [], datasets: buildDatasets(visible) },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 interaction: { intersect: false, mode: 'index' },
-                scales: {
-                    x: { display: true, title: { display: true, text: 'Time (s)' } },
-                    y: { display: true, title: { display: true, text: 'Amplitude' } }
-                }
+                scales: { x: { display: true, title: { display: true, text: 'Time (s)' } }, y: { display: true, title: { display: true, text: 'Amplitude' } } }
             }
         });
     }
@@ -104,31 +113,31 @@
         else updateChart();
     };
 
-    function loadEegData() {
+    function loadInitial() {
         var subjectEl = document.getElementById('eegSubject');
         var sessionEl = document.getElementById('eegSession');
         var subject = subjectEl ? parseInt(subjectEl.value, 10) || 1 : 1;
         var session = sessionEl ? parseInt(sessionEl.value, 10) || 1 : 1;
-        var url = '/api/eeg/sample?subject=' + subject + '&session=' + session + '&max_duration_sec=60&sample_rate=128';
-        return fetch(url)
-            .then(function (r) {
-                if (!r.ok) throw new Error('Request failed: ' + r.status);
-                return r.json();
-            })
-            .then(function (data) {
-                if (!data || !Array.isArray(data.time)) throw new Error('Invalid data');
-                eegData = data;
+        var eegUrl = '/api/eeg/sample?subject=' + subject + '&session=' + session + '&max_duration_sec=60&sample_rate=128';
+        var stateUrl = '/api/state?subject=' + subject + '&session=' + session + '&max_duration_sec=60';
+        Promise.all([
+            fetch(eegUrl).then(function (r) { return r.ok ? r.json() : null; }),
+            fetch(stateUrl).then(function (r) { return r.ok ? r.json() : null; })
+        ]).then(function (results) {
+            if (results[0] && Array.isArray(results[0].time)) {
+                eegData = results[0];
                 if (!chart) initChart();
                 else updateChart();
-            })
-            .catch(function (err) { console.error('EEG load failed', err); });
+            }
+            renderState(results[1] || null);
+        }).catch(function () { renderState(null); });
     }
 
     function init() {
         document.querySelectorAll('.eeg-bands input[name="band"]').forEach(function (cb) {
             cb.addEventListener('change', updateChart);
         });
-        loadEegData();
+        loadInitial();
     }
 
     runWhenReady(init);

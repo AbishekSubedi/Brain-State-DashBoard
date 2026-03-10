@@ -209,7 +209,22 @@ Once this is in place, you can swap in your own EMOTIV recordings by adding anot
 
 - **`pipeline/loaders.py`** – `load_synthetic_segment()`, `load_emotiv_edf()`, `emotiv_edf_to_band_time_series()`, and `list_emotiv_edf_files()` for your **Emotiv Sample Data** EDFs. Data lives under `Emotiv Sample Data/S001/S001E01.edf` (subject S001, session E01), etc.
 - **`pipeline/features.py`** – `band_power_psd()` and `band_power_time_series()` using scipy (Welch PSD + Simpson integration).
-- **`pipeline/classifier.py`** – to be added: train a small model on band-power features and expose `predict_state(features)` for the API.
+- **`pipeline/state_classifier.py`** – rule-based mental-state classifier: `classify(features)` returns predicted_state, confidence, explanation, scores, features. Replaceable later by a trained ML model.
+
+---
+
+## Mental-state inference (rule-based)
+
+The dashboard infers a **State of Mind** from EEG band data using a simple rule-based classifier.
+
+**Flow:** Load EDF → band time series → **feature_extractor** (mean power, relative power, beta/alpha, theta/beta, alpha/(beta+gamma)) → **state_classifier** → JSON with `predicted_state`, `confidence`, `explanation`, `scores`, `features`.
+
+**Backend modules:**
+- **`pipeline/eeg_loader.py`** – `list_emotiv_edf_files`, `get_edf_path`, `load_band_time_series`, `load_band_time_series_for_subject_session`.
+- **`pipeline/feature_extractor.py`** – `extract_features(band_series)` returns mean/relative power and ratios.
+- **`pipeline/state_classifier.py`** – `classify(features)` returns Relaxed / Focused / Drowsy / Stressed / Neutral/Unclear with heuristics (e.g. relaxed = high alpha, low beta/gamma; focused = elevated beta, low theta; drowsy = high theta/delta, low beta; stressed = high beta/gamma, low alpha).
+
+**API:** `GET /api/state?subject=1&session=1&max_duration_sec=60` returns the inference JSON. The frontend calls this when the user clicks Load (same subject/session as the graph) and renders the result in the “State of Mind” and “Explain the state” sections, plus an optional disclaimer.
 
 ---
 

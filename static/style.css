@@ -219,10 +219,17 @@ body {
 }
 
 .state-summary,
-.state-explanation {
+.state-explanation,
+.state-disclaimer {
     margin: 0;
     font-size: 0.95rem;
     color: var(--text);
+}
+
+.state-disclaimer {
+    margin-top: 8px;
+    font-size: 0.8rem;
+    color: var(--muted);
 }
 
 .brain-visual {

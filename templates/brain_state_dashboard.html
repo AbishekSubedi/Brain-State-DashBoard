@@ -53,6 +53,7 @@
             <div class="state-of-mind">
                 <h3>State of Mind</h3>
                 <p id="stateSummary" class="state-summary">—</p>
+                <p id="stateDisclaimer" class="state-disclaimer" style="display: none;">Research visualization only. Not for medical diagnosis.</p>
             </div>
             <div class="brain-visual">
                 <span class="brain-label">Maybe brain animation</span>
@@ -60,10 +61,7 @@
             </div>
             <div class="explain-state">
                 <h3>Explain the state</h3>
-                <p id="stateExplanation" class="state-explanation">
-                    Toggle EEG bands above and view the graph. This area will show an interpretation
-                    of mental state (e.g. focused, relaxed) based on band activity once the classifier is added.
-                </p>
+                <p id="stateExplanation" class="state-explanation">Load a session to see the inferred mental state and explanation.</p>
             </div>
         </section>
     </main>
@@ -72,6 +70,6 @@
         <p>Brain State Dashboard — Research &amp; visualization only. Not for medical diagnosis or treatment.</p>
     </footer>
 
-    <script src="{{ request.url_for('static', path='dashboard.js') }}?v=5"></script>
+    <script src="{{ request.url_for('static', path='dashboard.js') }}?v=6"></script>
 </body>
 </html>
