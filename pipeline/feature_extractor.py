@@ -4,8 +4,16 @@ Input: dict with keys delta, theta, alpha, beta, gamma (lists or arrays).
 Output: dict of scalar features for the rule-based (or future ML) classifier.
 """
 
-import numpy as np
 from typing import Any
+
+import numpy as np
+from scipy.signal import welch
+
+BANDS = {
+    "theta": (4.0, 8.0),
+    "alpha": (8.0, 13.0),
+    "beta": (13.0, 30.0),
+}
 
 
 def _to_array(x: Any) -> np.ndarray:
@@ -65,3 +73,51 @@ def extract_features(band_series: dict[str, Any]) -> dict[str, float]:
         "alpha_beta_gamma_ratio": alpha_beta_gamma,
     }
     return out
+
+
+def _validate_trial_array(trials: np.ndarray) -> np.ndarray:
+    arr = np.asarray(trials, dtype=float)
+    if arr.ndim != 3:
+        raise ValueError(
+            f"Expected EEG trials with shape (n_trials, n_channels, n_times), got {arr.shape}."
+        )
+    return arr
+
+
+def compute_bandpower_features(
+    trials: np.ndarray,
+    sfreq: float,
+    bands: dict[str, tuple[float, float]] | None = None,
+    nperseg: int | None = None,
+    log_power: bool = True,
+) -> tuple[np.ndarray, list[str]]:
+    """
+    Compute channel-wise bandpower features for trial-wise EEG.
+
+    Returns:
+    - feature matrix with shape (n_trials, n_channels * n_bands)
+    - feature names aligned with the matrix columns
+    """
+    arr = _validate_trial_array(trials)
+    selected_bands = bands or BANDS
+    _, _, n_times = arr.shape
+    if nperseg is None:
+        nperseg = min(256, n_times)
+    nperseg = min(max(8, nperseg), n_times)
+
+    freqs, psd = welch(arr, fs=sfreq, axis=-1, nperseg=nperseg)
+    feature_blocks: list[np.ndarray] = []
+    feature_names: list[str] = []
+
+    for band_name, (low_freq, high_freq) in selected_bands.items():
+        mask = (freqs >= low_freq) & (freqs < high_freq)
+        if not np.any(mask):
+            raise ValueError(f"No Welch frequency bins found for band {band_name} in range {(low_freq, high_freq)}.")
+        band_power = np.trapezoid(psd[..., mask], freqs[mask], axis=-1)
+        if log_power:
+            band_power = np.log10(band_power + 1e-12)
+        feature_blocks.append(band_power)
+        feature_names.extend([f"{band_name}_ch{channel_idx:02d}" for channel_idx in range(arr.shape[1])])
+
+    features = np.concatenate(feature_blocks, axis=1)
+    return features, feature_names
