@@ -50,7 +50,9 @@
             <div class="control-card">
                 <h2>Playback</h2>
                 <div class="playback-actions">
+                    <button type="button" id="stepBackBtn" class="secondary-btn step-btn" onclick="if(window.stepPlayback){window.stepPlayback(-1);}">−</button>
                     <button type="button" id="playPauseBtn" class="secondary-btn" onclick="if(window.togglePlayback){window.togglePlayback();}">Play</button>
+                    <button type="button" id="stepForwardBtn" class="secondary-btn step-btn" onclick="if(window.stepPlayback){window.stepPlayback(1);}">+</button>
                     <input type="range" id="timelineSlider" min="0" max="0" value="0" step="1" class="timeline-slider">
                 </div>
                 <p id="playbackMeta" class="status-copy">The state label will update as the cursor moves through the session.</p>
@@ -60,7 +62,6 @@
         <section class="graph-section">
             <h2>EEG Timeline</h2>
             <div class="graph-wrapper">
-                <div id="chartCursor" class="chart-cursor" aria-hidden="true"></div>
                 <canvas id="eegChart" aria-label="EEG signal over time"></canvas>
             </div>
             <div class="eeg-bands">
@@ -99,6 +100,6 @@
         <p>Brain State Dashboard — Research &amp; visualization only. Not for medical diagnosis or treatment.</p>
     </footer>
 
-    <script src="{{ request.url_for('static', path='dashboard.js') }}?v=7"></script>
+    <script src="{{ request.url_for('static', path='dashboard.js') }}?v=12"></script>
 </body>
 </html>

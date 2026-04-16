@@ -3,6 +3,7 @@
     var playback = null;
     var timelineIndex = 0;
     var playbackTimer = null;
+    var GRAPH_WINDOW_SECONDS = 2.4;
 
     function byId(id) {
         return document.getElementById(id);
@@ -113,8 +114,18 @@
                     scales: {
                         x: {
                             type: 'linear',
+                            min: 0,
+                            max: GRAPH_WINDOW_SECONDS,
                             title: { display: true, text: 'Time (s)', color: '#9ba7c2' },
-                            ticks: { color: '#9ba7c2' },
+                            ticks: {
+                                color: '#9ba7c2',
+                                stepSize: 0.1,
+                                maxRotation: 0,
+                                minRotation: 0,
+                                callback: function (value) {
+                                    return Number(value).toFixed(1);
+                                }
+                            },
                             grid: { color: 'rgba(255,255,255,0.08)' }
                         },
                         y: {
@@ -149,23 +160,26 @@
         ensureChart();
         if (!chart || !playback) return;
         chart.data.datasets = buildDatasets();
+        updateChartViewport();
         chart.update('none');
-        updateCursor();
     }
 
-    function updateCursor() {
-        if (!playback || !playback.timeline.length || !chart) return;
-        var cursor = byId('chartCursor');
-        var wrapper = cursor ? cursor.parentElement : null;
-        var current = playback.timeline[timelineIndex];
-        var xScale = chart.scales && chart.scales.x;
-        if (!cursor || !wrapper || !xScale || !chart.chartArea) return;
-        var wrapperRect = wrapper.getBoundingClientRect();
-        var canvasRect = chart.canvas.getBoundingClientRect();
-        var left = (canvasRect.left - wrapperRect.left) + xScale.getPixelForValue(current.midpoint);
-        cursor.style.left = String(left) + 'px';
-        cursor.style.top = String((canvasRect.top - wrapperRect.top) + chart.chartArea.top) + 'px';
-        cursor.style.height = String(chart.chartArea.bottom - chart.chartArea.top) + 'px';
+    function updateChartViewport() {
+        if (!chart || !playback || !playback.time.length) return;
+        var current = playback.timeline && playback.timeline.length ? playback.timeline[timelineIndex] : null;
+        var currentTime = current ? current.midpoint : 0;
+        var sessionEnd = playback.time[playback.time.length - 1] || GRAPH_WINDOW_SECONDS;
+        var halfWindow = GRAPH_WINDOW_SECONDS / 2;
+        var minTime = Math.max(0, currentTime - halfWindow);
+        var maxTime = minTime + GRAPH_WINDOW_SECONDS;
+
+        if (maxTime > sessionEnd) {
+            maxTime = sessionEnd;
+            minTime = Math.max(0, maxTime - GRAPH_WINDOW_SECONDS);
+        }
+
+        chart.options.scales.x.min = minTime;
+        chart.options.scales.x.max = maxTime;
     }
 
     function renderTimelineBar() {
@@ -207,6 +221,7 @@
         }
 
         var current = playback.timeline[timelineIndex];
+        var displayTime = Math.max(0, current.start);
         summaryEl.textContent = current.label;
         confidenceEl.textContent = 'Confidence ' + Math.round(current.confidence * 100) + '%';
         explanationEl.textContent =
@@ -215,10 +230,9 @@
                 : 'The model sees a window that looks closer to the Shin2017 rest trials than the subtraction trials.';
         playbackMetaEl.textContent =
             'Window ' + (timelineIndex + 1) + ' of ' + playback.timeline.length +
-            ' at ' + current.midpoint.toFixed(1) + 's in ' + playback.session_name + '.';
+            ' at ' + displayTime.toFixed(1) + 's in ' + playback.session_name + '.';
         if (disclaimerEl) disclaimerEl.style.display = 'block';
         setPulseState(current.label);
-        updateCursor();
     }
 
     function stopPlayback() {
@@ -235,6 +249,8 @@
         timelineIndex = Math.max(0, Math.min(playback.timeline.length - 1, index));
         var slider = byId('timelineSlider');
         if (slider) slider.value = String(timelineIndex);
+        updateChartViewport();
+        if (chart) chart.update('none');
         renderCurrentState();
     }
 
@@ -257,6 +273,12 @@
             }
             setTimelineIndex(timelineIndex + 1);
         }, 350);
+    };
+
+    window.stepPlayback = function stepPlayback(delta) {
+        if (!playback || !playback.timeline.length) return;
+        stopPlayback();
+        setTimelineIndex(timelineIndex + delta);
     };
 
     function applyPlayback(payload) {
