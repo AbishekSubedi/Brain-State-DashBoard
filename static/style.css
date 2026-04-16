@@ -192,6 +192,13 @@ body {
     gap: 12px;
 }
 
+.step-btn {
+    min-width: 2.25rem;
+    padding: 8px 0;
+    font-size: 1rem;
+    line-height: 1;
+}
+
 .timeline-slider {
     width: 100%;
 }
@@ -211,19 +218,6 @@ body {
 #eegChart {
     width: 100% !important;
     height: 100% !important;
-}
-
-.chart-cursor {
-    position: absolute;
-    width: 2px;
-    left: 0;
-    background: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 0 18px rgba(255, 255, 255, 0.35);
-    pointer-events: none;
-    transform: translateX(-1px);
-    transition: left 180ms linear;
-    border-radius: 999px;
-    opacity: 0.95;
 }
 
 .eeg-bands {
