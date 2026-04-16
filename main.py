@@ -1,80 +1,82 @@
-import uvicorn
-from fastapi import FastAPI, Request, HTTPException
-from fastapi.templating import Jinja2Templates
-from fastapi.staticfiles import StaticFiles
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+import uvicorn
 
 app = FastAPI(
     title="Brain State Dashboard",
-    description="A dashboard for visualizing brain state data.",
-    version="1.0.0",
+    description="Train a Shin2017 brain-state model and animate session-level predictions.",
+    version="2.0.0",
 )
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 
-@app.get("/api/eeg/sample")
-async def get_eeg_data(
-    subject: int = 1,
-    session: int = 1,
-    max_duration_sec: float = 60.0,
-    sample_rate: int = 128,
-):
-    """EEG band time series from Emotiv Sample Data (EDF)."""
+@app.get("/api/model/status")
+async def model_status():
     try:
-        from pipeline.eeg_loader import (
-            list_emotiv_edf_files,
-            load_band_time_series_for_subject_session,
-            DEFAULT_DATA_DIR,
-        )
-    except ImportError as e:
-        raise HTTPException(status_code=500, detail=f"Pipeline not available: {e}") from e
-    data = load_band_time_series_for_subject_session(
-        subject, session,
-        max_duration_sec=max_duration_sec if max_duration_sec > 0 else None,
-        target_sfreq=min(sample_rate, 250),
-        data_dir=DEFAULT_DATA_DIR,
-    )
-    if data is None:
-        raise HTTPException(status_code=404, detail="No EDF files found.")
-    return data
+        from pipeline.state_classifier import get_model_status
+    except ImportError as exc:
+        raise HTTPException(status_code=500, detail=f"Pipeline not available: {exc}") from exc
+    return get_model_status()
 
 
-@app.get("/api/state")
-async def get_state(subject: int = 1, session: int = 1, max_duration_sec: float = 60.0):
-    """
-    Mental state inference from EEG band features (rule-based).
-    Returns predicted_state, confidence, explanation, scores, features.
-    """
+@app.post("/api/model/train")
+async def train_first_model(model: str = "svm"):
     try:
-        from pipeline.eeg_loader import load_band_time_series_for_subject_session, DEFAULT_DATA_DIR
-        from pipeline.feature_extractor import extract_features
-        from pipeline.state_classifier import classify
-    except ImportError as e:
-        raise HTTPException(status_code=500, detail=f"Pipeline not available: {e}") from e
-    band_data = load_band_time_series_for_subject_session(
-        subject, session,
-        max_duration_sec=max_duration_sec if max_duration_sec > 0 else None,
-        target_sfreq=128,
-        data_dir=DEFAULT_DATA_DIR,
-    )
-    if band_data is None:
-        raise HTTPException(status_code=404, detail="No EDF data for this subject/session.")
-    features = extract_features(band_data)
-    result = classify(features)
-    return result
+        from pipeline.state_classifier import train_first_model as run_training
+    except ImportError as exc:
+        raise HTTPException(status_code=500, detail=f"Pipeline not available: {exc}") from exc
 
-
-@app.get("/api/eeg/files")
-async def list_eeg_files():
-    """List available EDF files (subject, session, path)."""
     try:
-        from pipeline.eeg_loader import list_emotiv_edf_files, DEFAULT_DATA_DIR
-    except ImportError:
-        return {"files": [], "error": "Pipeline not available"}
-    files = list_emotiv_edf_files(DEFAULT_DATA_DIR)
-    return {"files": [{"subject": s, "session": e, "path": str(p)} for s, e, p in files]}
+        result = run_training(model_name=model)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Training failed: {exc}") from exc
+
+    return {
+        "trained": True,
+        "artifact_dir": result["artifact_dir"],
+        "metadata": result["metadata"],
+        "metrics": {
+            "accuracy": result["metrics"]["accuracy"],
+            "confusion_matrix": result["metrics"]["confusion_matrix"].tolist(),
+            "classification_report": result["metrics"]["classification_report"],
+            "cross_val_accuracy_mean": round(float(result["cv_scores"].mean()), 4),
+            "cross_val_accuracy_std": round(float(result["cv_scores"].std()), 4),
+        },
+    }
+
+
+@app.get("/api/sessions")
+async def list_sessions(subject: int = 1):
+    try:
+        from pipeline.eeg_loader import list_shin2017_sessions
+    except ImportError as exc:
+        raise HTTPException(status_code=500, detail=f"Pipeline not available: {exc}") from exc
+
+    try:
+        sessions = list_shin2017_sessions(subject=subject, kind="state")
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Unable to list sessions: {exc}") from exc
+
+    return {"subject": subject, "dataset": "Shin2017B", "sessions": sessions}
+
+
+@app.get("/api/session/playback")
+async def session_playback(subject: int = 1, session: int = 1):
+    try:
+        from pipeline.state_classifier import predict_session_timeline
+    except ImportError as exc:
+        raise HTTPException(status_code=500, detail=f"Pipeline not available: {exc}") from exc
+
+    try:
+        return predict_session_timeline(subject=subject, session=session)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Unable to score session: {exc}") from exc
 
 
 @app.get("/", response_class=HTMLResponse)
