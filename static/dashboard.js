@@ -4,9 +4,60 @@
     var timelineIndex = 0;
     var playbackTimer = null;
     var GRAPH_WINDOW_SECONDS = 2.4;
+    var activeMode = 'state';
+    var MODEL_CONFIG = {
+        state: {
+            mode: 'state',
+            headline: 'Shin2017 First Model',
+            intro: "This version of the dashboard uses the Shin2017 study as the first training source. For the current model, the usable state labels come from the study\\'s mental arithmetic split: rest = relaxed and subtraction = focused. Train the model, choose a subject and session, then watch the EEG bands and predicted state move through the session timeline.",
+            statusUrl: '/api/model/status',
+            trainUrl: '/api/model/train?model=svm',
+            playbackUrl: '/api/session/playback',
+            trainButtonLabel: 'Train First Model',
+            loadHint: 'Choose a subject and arithmetic session to load playback data.',
+            emptyExplanation: 'Train the first model, then load a session to see how the prediction changes over time.',
+            legend: [
+                { label: 'Relaxed', swatchClass: 'swatch-relaxed' },
+                { label: 'Focused', swatchClass: 'swatch-focused' }
+            ],
+            summaryNoun: 'state',
+            pulseClasses: { primary: 'relaxed', secondary: 'focused' },
+            explainLabel: function (label) {
+                return label === 'Focused'
+                    ? 'The model sees a window that looks closer to the Shin2017 subtraction trials than the rest trials.'
+                    : 'The model sees a window that looks closer to the Shin2017 rest trials than the subtraction trials.';
+            }
+        },
+        imagery: {
+            mode: 'imagery',
+            headline: 'Shin2017 Second Model',
+            intro: 'The second model uses Shin2017A motor-imagery trials to classify left-hand versus right-hand intent. Train the imagery model, choose a subject and session, then step through the EEG playback to see the predicted movement side change over time.',
+            statusUrl: '/api/model/imagery/status',
+            trainUrl: '/api/model/imagery/train?model=csp_lda',
+            playbackUrl: '/api/session/imagery/playback',
+            trainButtonLabel: 'Train Second Model',
+            loadHint: 'Choose a subject and imagery session to load left-vs-right playback data.',
+            emptyExplanation: 'Train the second model, then load a session to inspect left-vs-right imagery predictions.',
+            legend: [
+                { label: 'Left Hand', swatchClass: 'swatch-left' },
+                { label: 'Right Hand', swatchClass: 'swatch-right' }
+            ],
+            summaryNoun: 'movement',
+            pulseClasses: { primary: 'left', secondary: 'right' },
+            explainLabel: function (label) {
+                return label === 'Right Hand'
+                    ? 'The model sees motor-imagery activity that is closer to the right-hand class in the Shin2017A training data.'
+                    : 'The model sees motor-imagery activity that is closer to the left-hand class in the Shin2017A training data.';
+            }
+        }
+    };
 
     function byId(id) {
         return document.getElementById(id);
+    }
+
+    function getModeConfig() {
+        return MODEL_CONFIG[activeMode];
     }
 
     function setButtonLoading(button, loadingText, isLoading) {
@@ -158,7 +209,14 @@
 
     function renderChart() {
         ensureChart();
-        if (!chart || !playback) return;
+        if (!chart) return;
+        if (!playback) {
+            chart.data.datasets = [];
+            chart.options.scales.x.min = 0;
+            chart.options.scales.x.max = GRAPH_WINDOW_SECONDS;
+            chart.update('none');
+            return;
+        }
         chart.data.datasets = buildDatasets();
         updateChartViewport();
         chart.update('none');
@@ -184,12 +242,13 @@
 
     function renderTimelineBar() {
         var container = byId('stateTimeline');
-        if (!container || !playback) return;
+        if (!container) return;
         container.innerHTML = '';
+        if (!playback) return;
         var lastTime = playback.time[playback.time.length - 1] || 1;
         playback.segments.forEach(function (segment) {
             var node = document.createElement('div');
-            node.className = 'timeline-segment timeline-' + segment.label.toLowerCase();
+            node.className = 'timeline-segment timeline-' + segment.label.toLowerCase().replace(/\s+/g, '-');
             node.style.width = String(((segment.end - segment.start) / lastTime) * 100) + '%';
             node.title = segment.label + ' (' + Math.round(segment.confidence * 100) + '%)';
             container.appendChild(node);
@@ -199,8 +258,9 @@
     function setPulseState(label) {
         var pulse = byId('brainPulse');
         if (!pulse) return;
-        pulse.classList.toggle('focused', label === 'Focused');
-        pulse.classList.toggle('relaxed', label !== 'Focused');
+        var pulseClasses = getModeConfig().pulseClasses;
+        pulse.classList.remove('focused', 'relaxed', 'left', 'right');
+        pulse.classList.add(label === getModeConfig().legend[1].label ? pulseClasses.secondary : pulseClasses.primary);
     }
 
     function renderCurrentState() {
@@ -214,8 +274,8 @@
         if (!playback || !playback.timeline.length) {
             summaryEl.textContent = '—';
             confidenceEl.textContent = 'Confidence —';
-            explanationEl.textContent = 'Train the first model, then load a session to see how the prediction changes over time.';
-            playbackMetaEl.textContent = 'The state label will update as the cursor moves through the session.';
+            explanationEl.textContent = getModeConfig().emptyExplanation;
+            playbackMetaEl.textContent = 'The prediction label will update as playback moves through the session.';
             if (disclaimerEl) disclaimerEl.style.display = 'none';
             return;
         }
@@ -224,10 +284,7 @@
         var displayTime = Math.max(0, current.start);
         summaryEl.textContent = current.label;
         confidenceEl.textContent = 'Confidence ' + Math.round(current.confidence * 100) + '%';
-        explanationEl.textContent =
-            current.label === 'Focused'
-                ? 'The model sees a window that looks closer to the Shin2017 subtraction trials than the rest trials.'
-                : 'The model sees a window that looks closer to the Shin2017 rest trials than the subtraction trials.';
+        explanationEl.textContent = getModeConfig().explainLabel(current.label);
         playbackMetaEl.textContent =
             'Window ' + (timelineIndex + 1) + ' of ' + playback.timeline.length +
             ' at ' + displayTime.toFixed(1) + 's in ' + playback.session_name + '.';
@@ -293,7 +350,7 @@
         if (sessionMeta) {
             sessionMeta.textContent =
                 'Loaded subject ' + playback.subject + ', session ' + playback.session +
-                ' (' + playback.session_name + '). Dominant state: ' + playback.summary.dominant_state + '.';
+                ' (' + playback.session_name + '). Dominant ' + getModeConfig().summaryNoun + ': ' + playback.summary.dominant_label + '.';
         }
         renderTimelineBar();
         renderChart();
@@ -320,11 +377,12 @@
     }
 
     function refreshModelStatus() {
-        return fetchJson('/api/model/status').then(function (payload) {
+        var config = getModeConfig();
+        return fetchJson(config.statusUrl).then(function (payload) {
             var statusEl = byId('modelStatusText');
             if (!statusEl) return;
             if (!payload.trained) {
-                statusEl.textContent = 'Model not trained yet. Train the first Shin2017 state model to unlock session playback.';
+                statusEl.textContent = 'Model not trained yet. Train the selected Shin2017 model to unlock session playback.';
                 return;
             }
             statusEl.textContent =
@@ -336,10 +394,10 @@
         });
     }
 
-    window.trainFirstModel = function trainFirstModel() {
+    window.trainActiveModel = function trainActiveModel() {
         var button = byId('trainModelBtn');
         setButtonLoading(button, 'Training…', true);
-        fetchJson('/api/model/train?model=svm', { method: 'POST' })
+        fetchJson(getModeConfig().trainUrl, { method: 'POST' })
             .then(function (payload) {
                 var statusEl = byId('modelStatusText');
                 if (statusEl) {
@@ -361,7 +419,7 @@
         var subject = parseInt(byId('eegSubject').value, 10) || 1;
         var session = parseInt(byId('eegSession').value, 10) || 1;
         setButtonLoading(button, 'Loading…', true);
-        fetchJson('/api/session/playback?subject=' + subject + '&session=' + session)
+        fetchJson(getModeConfig().playbackUrl + '?subject=' + subject + '&session=' + session)
             .then(applyPlayback)
             .catch(function (error) {
                 handleApiError('Session load failed', error);
@@ -371,9 +429,51 @@
             });
     };
 
+    function updateModeUI() {
+        var config = getModeConfig();
+        var headline = byId('modelHeadline');
+        var intro = byId('modelIntro');
+        var trainButton = byId('trainModelBtn');
+        var sessionMeta = byId('sessionMeta');
+        var legendLabelA = byId('legendLabelA');
+        var legendLabelB = byId('legendLabelB');
+        var legendSwatchA = byId('legendSwatchA');
+        var legendSwatchB = byId('legendSwatchB');
+
+        document.querySelectorAll('.model-chip').forEach(function (chip) {
+            chip.classList.toggle('active', chip.dataset.modelMode === activeMode);
+        });
+
+        if (headline) headline.textContent = config.headline;
+        if (intro) intro.textContent = config.intro;
+        if (trainButton) {
+            trainButton.textContent = config.trainButtonLabel;
+            trainButton.dataset.defaultText = config.trainButtonLabel;
+        }
+        if (sessionMeta) sessionMeta.textContent = config.loadHint;
+        if (legendLabelA) legendLabelA.textContent = config.legend[0].label;
+        if (legendLabelB) legendLabelB.textContent = config.legend[1].label;
+        if (legendSwatchA) legendSwatchA.className = 'swatch ' + config.legend[0].swatchClass;
+        if (legendSwatchB) legendSwatchB.className = 'swatch ' + config.legend[1].swatchClass;
+
+        playback = null;
+        stopPlayback();
+        renderCurrentState();
+        renderTimelineBar();
+        renderChart();
+        refreshModelStatus();
+    }
+
     function bindControls() {
         document.querySelectorAll('.eeg-bands input[name="band"]').forEach(function (checkbox) {
             checkbox.addEventListener('change', renderChart);
+        });
+        document.querySelectorAll('.model-chip').forEach(function (chip) {
+            chip.addEventListener('click', function () {
+                if (chip.dataset.modelMode === activeMode) return;
+                activeMode = chip.dataset.modelMode;
+                updateModeUI();
+            });
         });
         var slider = byId('timelineSlider');
         if (slider) {
@@ -386,7 +486,7 @@
 
     function init() {
         bindControls();
-        refreshModelStatus();
+        updateModeUI();
     }
 
     if (document.readyState === 'loading') {
