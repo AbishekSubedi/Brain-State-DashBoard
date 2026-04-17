@@ -14,6 +14,8 @@
     --beta: #ff9f40;
     --focused: #ff9f40;
     --relaxed: #78e0b5;
+    --left: #79c8ff;
+    --right: #ff7b8b;
     --radius: 12px;
     --font-sans: "DM Sans", "Segoe UI", system-ui, sans-serif;
 }
@@ -82,6 +84,37 @@ body {
 
 .info-section {
     margin-bottom: 24px;
+}
+
+.model-switcher {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+}
+
+.model-chip {
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--muted);
+    border-radius: 999px;
+    padding: 8px 14px;
+    font: inherit;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: 140ms ease;
+}
+
+.model-chip:hover {
+    color: var(--text);
+    border-color: rgba(120, 224, 181, 0.34);
+}
+
+.model-chip.active {
+    color: #04101b;
+    background: var(--accent);
+    border-color: transparent;
+    box-shadow: 0 10px 30px rgba(120, 224, 181, 0.18);
 }
 
 .info-section h2,
@@ -269,6 +302,14 @@ body {
     background: linear-gradient(90deg, rgba(255, 159, 64, 0.88), rgba(255, 193, 115, 0.88));
 }
 
+.timeline-left-hand {
+    background: linear-gradient(90deg, rgba(121, 200, 255, 0.88), rgba(111, 170, 255, 0.88));
+}
+
+.timeline-right-hand {
+    background: linear-gradient(90deg, rgba(255, 123, 139, 0.88), rgba(255, 166, 109, 0.88));
+}
+
 .timeline-key {
     display: flex;
     gap: 18px;
@@ -287,6 +328,8 @@ body {
 
 .swatch-relaxed { background: var(--relaxed); }
 .swatch-focused { background: var(--focused); }
+.swatch-left { background: var(--left); }
+.swatch-right { background: var(--right); }
 
 .state-section {
     display: grid;
@@ -360,6 +403,16 @@ body {
 .brain-pulse.focused {
     background: radial-gradient(circle, rgba(255, 159, 64, 0.95), rgba(255, 159, 64, 0.2));
     box-shadow: 0 0 32px rgba(255, 159, 64, 0.32);
+}
+
+.brain-pulse.left {
+    background: radial-gradient(circle, rgba(121, 200, 255, 0.95), rgba(121, 200, 255, 0.18));
+    box-shadow: 0 0 32px rgba(121, 200, 255, 0.3);
+}
+
+.brain-pulse.right {
+    background: radial-gradient(circle, rgba(255, 123, 139, 0.95), rgba(255, 123, 139, 0.18));
+    box-shadow: 0 0 32px rgba(255, 123, 139, 0.3);
 }
 
 @keyframes pulse {

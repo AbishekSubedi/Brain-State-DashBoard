@@ -21,8 +21,12 @@
 
     <main class="main-content">
         <section class="info-section">
-            <h2>Shin2017 First Model</h2>
-            <p>
+            <div class="model-switcher">
+                <button type="button" class="model-chip active" data-model-mode="state">Model 1: Relaxed vs Focused</button>
+                <button type="button" class="model-chip" data-model-mode="imagery">Model 2: Left vs Right Hand</button>
+            </div>
+            <h2 id="modelHeadline">Shin2017 First Model</h2>
+            <p id="modelIntro">
                 This version of the dashboard uses the Shin2017 study as the first training source. For the current model,
                 the usable state labels come from the study's mental arithmetic split: <strong>rest = relaxed</strong> and
                 <strong>subtraction = focused</strong>. Train the model, choose a subject and session, then watch the EEG bands
@@ -34,7 +38,7 @@
             <div class="control-card">
                 <h2>Model</h2>
                 <p id="modelStatusText" class="status-copy">Checking model status…</p>
-                <button type="button" id="trainModelBtn" class="load-btn" onclick="if(window.trainFirstModel){window.trainFirstModel();}">Train First Model</button>
+                <button type="button" id="trainModelBtn" class="load-btn" onclick="if(window.trainActiveModel){window.trainActiveModel();}">Train First Model</button>
             </div>
             <div class="control-card">
                 <h2>Session</h2>
@@ -71,8 +75,8 @@
             </div>
             <div id="stateTimeline" class="state-timeline" aria-label="Predicted state timeline"></div>
             <div class="timeline-key">
-                <span><i class="swatch swatch-relaxed"></i>Relaxed</span>
-                <span><i class="swatch swatch-focused"></i>Focused</span>
+                <span><i id="legendSwatchA" class="swatch swatch-relaxed"></i><span id="legendLabelA">Relaxed</span></span>
+                <span><i id="legendSwatchB" class="swatch swatch-focused"></i><span id="legendLabelB">Focused</span></span>
             </div>
         </section>
 
@@ -100,6 +104,6 @@
         <p>Brain State Dashboard — Research &amp; visualization only. Not for medical diagnosis or treatment.</p>
     </footer>
 
-    <script src="{{ request.url_for('static', path='dashboard.js') }}?v=12"></script>
+    <script src="{{ request.url_for('static', path='dashboard.js') }}?v=13"></script>
 </body>
 </html>
