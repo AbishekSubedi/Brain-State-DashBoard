@@ -61,12 +61,14 @@ def preprocess_trials(
     sfreq: float,
     apply_baseline: bool = True,
     baseline_samples: int | None = None,
-    bandpass_range: Iterable[float] = (1.0, 40.0),
+    bandpass_range: Iterable[float] | None = (1.0, 40.0),
     filter_order: int = 4,
 ) -> np.ndarray:
-    """Apply baseline correction then bandpass filtering to trial-wise EEG."""
+    """Apply baseline correction and optional bandpass filtering to trial-wise EEG."""
     arr = _validate_trials(trials)
     if apply_baseline:
         arr = remove_baseline_trials(arr, baseline_samples=baseline_samples)
+    if bandpass_range is None:
+        return arr
     low_freq, high_freq = tuple(bandpass_range)
     return bandpass_filter_trials(arr, sfreq=sfreq, low_freq=low_freq, high_freq=high_freq, order=filter_order)
