@@ -14,27 +14,15 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 
-@app.get("/api/model/status")
-async def model_status():
+def _load_pipeline_attr(module_name: str, attr_name: str):
     try:
-        from pipeline.state_classifier import get_model_status
+        module = __import__(module_name, fromlist=[attr_name])
     except ImportError as exc:
         raise HTTPException(status_code=500, detail=f"Pipeline not available: {exc}") from exc
-    return get_model_status()
+    return getattr(module, attr_name)
 
 
-@app.post("/api/model/train")
-async def train_first_model(model: str = "svm"):
-    try:
-        from pipeline.state_classifier import train_first_model as run_training
-    except ImportError as exc:
-        raise HTTPException(status_code=500, detail=f"Pipeline not available: {exc}") from exc
-
-    try:
-        result = run_training(model_name=model)
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Training failed: {exc}") from exc
-
+def _serialize_training_result(result: dict) -> dict:
     return {
         "trained": True,
         "artifact_dir": result["artifact_dir"],
@@ -49,13 +37,39 @@ async def train_first_model(model: str = "svm"):
     }
 
 
+@app.get("/api/model/status")
+async def model_status():
+    return _load_pipeline_attr("pipeline.state_classifier", "get_model_status")()
+
+
+@app.get("/api/model/imagery/status")
+async def imagery_model_status():
+    return _load_pipeline_attr("pipeline.state_classifier", "get_second_model_status")()
+
+
+@app.post("/api/model/train")
+async def train_first_model(model: str = "svm"):
+    run_training = _load_pipeline_attr("pipeline.state_classifier", "train_first_model")
+    try:
+        result = run_training(model_name=model)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Training failed: {exc}") from exc
+    return _serialize_training_result(result)
+
+
+@app.post("/api/model/imagery/train")
+async def train_second_model(model: str = "csp_lda"):
+    run_training = _load_pipeline_attr("pipeline.state_classifier", "train_second_model")
+    try:
+        result = run_training(model_name=model)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Training failed: {exc}") from exc
+    return _serialize_training_result(result)
+
+
 @app.get("/api/sessions")
 async def list_sessions(subject: int = 1):
-    try:
-        from pipeline.eeg_loader import list_shin2017_sessions
-    except ImportError as exc:
-        raise HTTPException(status_code=500, detail=f"Pipeline not available: {exc}") from exc
-
+    list_shin2017_sessions = _load_pipeline_attr("pipeline.eeg_loader", "list_shin2017_sessions")
     try:
         sessions = list_shin2017_sessions(subject=subject, kind="state")
     except Exception as exc:
@@ -66,17 +80,27 @@ async def list_sessions(subject: int = 1):
 
 @app.get("/api/session/playback")
 async def session_playback(subject: int = 1, session: int = 1):
-    try:
-        from pipeline.state_classifier import predict_session_timeline
-    except ImportError as exc:
-        raise HTTPException(status_code=500, detail=f"Pipeline not available: {exc}") from exc
-
+    predict_session_timeline = _load_pipeline_attr("pipeline.state_classifier", "predict_session_timeline")
     try:
         return predict_session_timeline(subject=subject, session=session)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Unable to score session: {exc}") from exc
+
+
+@app.get("/api/session/imagery/playback")
+async def imagery_session_playback(subject: int = 1, session: int = 1):
+    predict_imagery_session_timeline = _load_pipeline_attr(
+        "pipeline.state_classifier",
+        "predict_imagery_session_timeline",
+    )
+    try:
+        return predict_imagery_session_timeline(subject=subject, session=session)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Unable to score imagery session: {exc}") from exc
 
 
 @app.get("/", response_class=HTMLResponse)
