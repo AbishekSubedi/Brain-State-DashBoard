@@ -13,9 +13,18 @@
             statusUrl: '/api/model/status',
             trainUrl: '/api/model/train?model=svm',
             playbackUrl: '/api/session/playback',
+            sessionsUrl: '/api/sessions?kind=state',
             trainButtonLabel: 'Train First Model',
             loadHint: 'Choose a subject and arithmetic session to load playback data.',
             emptyExplanation: 'Train the first model, then load a session to see how the prediction changes over time.',
+            statePanelTitle: 'State of Mind',
+            explainPanelTitle: 'Explain the state',
+            summary: {
+                dataset: 'Shin2017B',
+                classes: 'Relaxed, Focused',
+                baseline: 'Bandpower + SVM',
+                note: 'Playback uses a sliding EEG window so the graph and the current prediction stay in sync.'
+            },
             legend: [
                 { label: 'Relaxed', swatchClass: 'swatch-relaxed' },
                 { label: 'Focused', swatchClass: 'swatch-focused' }
@@ -35,9 +44,18 @@
             statusUrl: '/api/model/imagery/status',
             trainUrl: '/api/model/imagery/train?model=csp_lda',
             playbackUrl: '/api/session/imagery/playback',
+            sessionsUrl: '/api/sessions?kind=imagery',
             trainButtonLabel: 'Train Second Model',
             loadHint: 'Choose a subject and imagery session to load left-vs-right playback data.',
             emptyExplanation: 'Train the second model, then load a session to inspect left-vs-right imagery predictions.',
+            statePanelTitle: 'Predicted Movement',
+            explainPanelTitle: 'Explain the movement',
+            summary: {
+                dataset: 'Shin2017A',
+                classes: 'Left Hand, Right Hand',
+                baseline: 'Filter-Bank CSP + LDA',
+                note: 'Imagery playback uses the second model to decode left-vs-right hand intent over sliding windows.'
+            },
             legend: [
                 { label: 'Left Hand', swatchClass: 'swatch-left' },
                 { label: 'Right Hand', swatchClass: 'swatch-right' }
@@ -65,6 +83,11 @@
         if (!button.dataset.defaultText) button.dataset.defaultText = button.textContent;
         button.disabled = isLoading;
         button.textContent = isLoading ? loadingText : button.dataset.defaultText;
+    }
+
+    function setText(id, value) {
+        var node = byId(id);
+        if (node) node.textContent = value;
     }
 
     function getBandColor(band) {
@@ -269,6 +292,8 @@
         var explanationEl = byId('stateExplanation');
         var disclaimerEl = byId('stateDisclaimer');
         var playbackMetaEl = byId('playbackMeta');
+        var currentLabelBadge = byId('currentLabelBadge');
+        var dominantLabelBadge = byId('dominantLabelBadge');
         if (!summaryEl || !confidenceEl || !explanationEl || !playbackMetaEl) return;
 
         if (!playback || !playback.timeline.length) {
@@ -276,6 +301,8 @@
             confidenceEl.textContent = 'Confidence —';
             explanationEl.textContent = getModeConfig().emptyExplanation;
             playbackMetaEl.textContent = 'The prediction label will update as playback moves through the session.';
+            if (currentLabelBadge) currentLabelBadge.textContent = '—';
+            if (dominantLabelBadge) dominantLabelBadge.textContent = '—';
             if (disclaimerEl) disclaimerEl.style.display = 'none';
             return;
         }
@@ -288,6 +315,8 @@
         playbackMetaEl.textContent =
             'Window ' + (timelineIndex + 1) + ' of ' + playback.timeline.length +
             ' at ' + displayTime.toFixed(1) + 's in ' + playback.session_name + '.';
+        if (currentLabelBadge) currentLabelBadge.textContent = current.label;
+        if (dominantLabelBadge) dominantLabelBadge.textContent = playback.summary.dominant_label;
         if (disclaimerEl) disclaimerEl.style.display = 'block';
         setPulseState(current.label);
     }
@@ -358,6 +387,33 @@
         stopPlayback();
     }
 
+    function populateSessionOptions(payload) {
+        var select = byId('sessionSelect');
+        var pickerMeta = byId('sessionPickerMeta');
+        if (!select) return;
+        select.innerHTML = '';
+        if (!payload.sessions || !payload.sessions.length) {
+            var emptyOption = document.createElement('option');
+            emptyOption.value = '1';
+            emptyOption.textContent = 'No sessions found';
+            select.appendChild(emptyOption);
+            if (pickerMeta) pickerMeta.textContent = 'No sessions were found for this subject.';
+            return;
+        }
+        payload.sessions.forEach(function (item, index) {
+            var option = document.createElement('option');
+            option.value = String(item.session);
+            option.textContent = 'Session ' + item.session + ' · ' + item.session_name;
+            if (index === 0) option.selected = true;
+            select.appendChild(option);
+        });
+        if (pickerMeta) {
+            pickerMeta.textContent =
+                'Found ' + payload.sessions.length + ' ' + (payload.sessions.length === 1 ? 'session' : 'sessions') +
+                ' in ' + payload.dataset + ' for subject ' + payload.subject + '.';
+        }
+    }
+
     function handleApiError(prefix, error) {
         console.error(prefix, error);
         var message = error && error.message ? error.message : String(error);
@@ -394,6 +450,23 @@
         });
     }
 
+    window.refreshSessionOptions = function refreshSessionOptions() {
+        var subject = parseInt(byId('eegSubject').value, 10) || 1;
+        var button = byId('refreshSessionsBtn');
+        var pickerMeta = byId('sessionPickerMeta');
+        setButtonLoading(button, 'Finding…', true);
+        if (pickerMeta) pickerMeta.textContent = 'Looking up available sessions…';
+        return fetchJson(getModeConfig().sessionsUrl + '&subject=' + subject)
+            .then(populateSessionOptions)
+            .catch(function (error) {
+                if (pickerMeta) pickerMeta.textContent = 'Unable to load sessions right now.';
+                handleApiError('Session lookup failed', error);
+            })
+            .finally(function () {
+                setButtonLoading(button, 'Finding…', false);
+            });
+    };
+
     window.trainActiveModel = function trainActiveModel() {
         var button = byId('trainModelBtn');
         setButtonLoading(button, 'Training…', true);
@@ -417,7 +490,7 @@
     window.doLoadSession = function doLoadSession() {
         var button = byId('eegLoadBtn');
         var subject = parseInt(byId('eegSubject').value, 10) || 1;
-        var session = parseInt(byId('eegSession').value, 10) || 1;
+        var session = parseInt(byId('sessionSelect').value, 10) || 1;
         setButtonLoading(button, 'Loading…', true);
         fetchJson(getModeConfig().playbackUrl + '?subject=' + subject + '&session=' + session)
             .then(applyPlayback)
@@ -439,6 +512,8 @@
         var legendLabelB = byId('legendLabelB');
         var legendSwatchA = byId('legendSwatchA');
         var legendSwatchB = byId('legendSwatchB');
+        var statePanelTitle = byId('statePanelTitle');
+        var explainPanelTitle = byId('explainPanelTitle');
 
         document.querySelectorAll('.model-chip').forEach(function (chip) {
             chip.classList.toggle('active', chip.dataset.modelMode === activeMode);
@@ -455,6 +530,12 @@
         if (legendLabelB) legendLabelB.textContent = config.legend[1].label;
         if (legendSwatchA) legendSwatchA.className = 'swatch ' + config.legend[0].swatchClass;
         if (legendSwatchB) legendSwatchB.className = 'swatch ' + config.legend[1].swatchClass;
+        if (statePanelTitle) statePanelTitle.textContent = config.statePanelTitle;
+        if (explainPanelTitle) explainPanelTitle.textContent = config.explainPanelTitle;
+        setText('summaryDataset', config.summary.dataset);
+        setText('summaryClasses', config.summary.classes);
+        setText('summaryBaseline', config.summary.baseline);
+        setText('summaryNote', config.summary.note);
 
         playback = null;
         stopPlayback();
@@ -462,6 +543,7 @@
         renderTimelineBar();
         renderChart();
         refreshModelStatus();
+        window.refreshSessionOptions();
     }
 
     function bindControls() {
@@ -480,6 +562,12 @@
             slider.addEventListener('input', function (event) {
                 stopPlayback();
                 setTimelineIndex(parseInt(event.target.value, 10) || 0);
+            });
+        }
+        var subjectInput = byId('eegSubject');
+        if (subjectInput) {
+            subjectInput.addEventListener('change', function () {
+                window.refreshSessionOptions();
             });
         }
     }

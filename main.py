@@ -68,14 +68,19 @@ async def train_second_model(model: str = "csp_lda"):
 
 
 @app.get("/api/sessions")
-async def list_sessions(subject: int = 1):
+async def list_sessions(subject: int = 1, kind: str = "state"):
     list_shin2017_sessions = _load_pipeline_attr("pipeline.eeg_loader", "list_shin2017_sessions")
     try:
-        sessions = list_shin2017_sessions(subject=subject, kind="state")
+        sessions = list_shin2017_sessions(subject=subject, kind=kind)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Unable to list sessions: {exc}") from exc
 
-    return {"subject": subject, "dataset": "Shin2017B", "sessions": sessions}
+    return {
+        "subject": subject,
+        "kind": kind,
+        "dataset": "Shin2017A" if kind == "imagery" else "Shin2017B",
+        "sessions": sessions,
+    }
 
 
 @app.get("/api/session/playback")
