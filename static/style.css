@@ -86,6 +86,60 @@ body {
     margin-bottom: 24px;
 }
 
+.hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.65fr) minmax(280px, 0.95fr);
+    gap: 18px;
+    align-items: stretch;
+}
+
+.hero-copy,
+.model-summary-card {
+    background: linear-gradient(180deg, rgba(18, 37, 60, 0.94), rgba(8, 17, 31, 0.92));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: calc(var(--radius) + 2px);
+    padding: 18px 20px;
+}
+
+.summary-kicker {
+    display: inline-block;
+    margin-bottom: 14px;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+}
+
+.summary-metrics {
+    display: grid;
+    gap: 12px;
+}
+
+.summary-metric {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    align-items: baseline;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.metric-label {
+    color: var(--muted);
+    font-size: 0.83rem;
+}
+
+.summary-metric strong {
+    text-align: right;
+    font-size: 0.95rem;
+}
+
+.summary-note {
+    margin: 14px 0 0;
+    color: var(--muted);
+    font-size: 0.88rem;
+}
+
 .model-switcher {
     display: flex;
     gap: 10px;
@@ -191,6 +245,16 @@ body {
     color: var(--text);
 }
 
+.source-select {
+    min-width: 11rem;
+    margin-left: 6px;
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: var(--text);
+}
+
 .load-btn,
 .secondary-btn {
     padding: 8px 14px;
@@ -234,6 +298,12 @@ body {
 
 .timeline-slider {
     width: 100%;
+}
+
+.picker-meta {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.82rem;
 }
 
 .graph-section {
@@ -370,7 +440,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
 }
 
 .brain-label {
@@ -385,6 +455,29 @@ body {
     align-items: center;
     justify-content: center;
     overflow: hidden;
+}
+
+.mini-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+}
+
+.mini-stat {
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.mini-label {
+    display: block;
+    color: var(--muted);
+    font-size: 0.76rem;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 .brain-pulse {
@@ -434,6 +527,7 @@ body {
 }
 
 @media (max-width: 920px) {
+    .hero-grid,
     .control-section,
     .state-section {
         grid-template-columns: 1fr;

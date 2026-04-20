@@ -25,13 +25,35 @@
                 <button type="button" class="model-chip active" data-model-mode="state">Model 1: Relaxed vs Focused</button>
                 <button type="button" class="model-chip" data-model-mode="imagery">Model 2: Left vs Right Hand</button>
             </div>
-            <h2 id="modelHeadline">Shin2017 First Model</h2>
-            <p id="modelIntro">
-                This version of the dashboard uses the Shin2017 study as the first training source. For the current model,
-                the usable state labels come from the study's mental arithmetic split: <strong>rest = relaxed</strong> and
-                <strong>subtraction = focused</strong>. Train the model, choose a subject and session, then watch the EEG bands
-                and predicted state move through the session timeline.
-            </p>
+            <div class="hero-grid">
+                <div class="hero-copy">
+                    <h2 id="modelHeadline">Shin2017 First Model</h2>
+                    <p id="modelIntro">
+                        This version of the dashboard uses the Shin2017 study as the first training source. For the current model,
+                        the usable state labels come from the study's mental arithmetic split: <strong>rest = relaxed</strong> and
+                        <strong>subtraction = focused</strong>. Train the model, choose a subject and session, then watch the EEG bands
+                        and predicted state move through the session timeline.
+                    </p>
+                </div>
+                <div class="model-summary-card">
+                    <span class="summary-kicker">Active Model</span>
+                    <div class="summary-metrics">
+                        <div class="summary-metric">
+                            <span class="metric-label">Dataset</span>
+                            <strong id="summaryDataset">Shin2017B</strong>
+                        </div>
+                        <div class="summary-metric">
+                            <span class="metric-label">Classes</span>
+                            <strong id="summaryClasses">Relaxed, Focused</strong>
+                        </div>
+                        <div class="summary-metric">
+                            <span class="metric-label">Baseline</span>
+                            <strong id="summaryBaseline">Bandpower + SVM</strong>
+                        </div>
+                    </div>
+                    <p id="summaryNote" class="summary-note">Playback uses a sliding EEG window so the graph and the current prediction stay in sync.</p>
+                </div>
+            </div>
         </section>
 
         <section class="control-section">
@@ -45,11 +67,17 @@
                 <div class="eeg-source">
                     <span class="source-params">
                         <label>Subject <input type="number" id="eegSubject" min="1" max="29" value="1" class="source-input"></label>
-                        <label>Session <input type="number" id="eegSession" min="1" max="3" value="1" class="source-input"></label>
+                        <label>Session
+                            <select id="sessionSelect" class="source-select">
+                                <option value="1">Session 1</option>
+                            </select>
+                        </label>
                     </span>
+                    <button type="button" id="refreshSessionsBtn" class="secondary-btn" onclick="if(window.refreshSessionOptions){window.refreshSessionOptions();}">Find Sessions</button>
                     <button type="button" id="eegLoadBtn" class="load-btn" onclick="if(window.doLoadSession){window.doLoadSession();}">Load Session</button>
                 </div>
                 <p id="sessionMeta" class="status-copy">Choose a subject and arithmetic session to load playback data.</p>
+                <p id="sessionPickerMeta" class="picker-meta">Loading session choices…</p>
             </div>
             <div class="control-card">
                 <h2>Playback</h2>
@@ -82,7 +110,7 @@
 
         <section class="state-section">
             <div class="state-of-mind">
-                <h3>State of Mind</h3>
+                <h3 id="statePanelTitle">State of Mind</h3>
                 <p id="stateSummary" class="state-summary">—</p>
                 <p id="stateConfidence" class="state-confidence">Confidence —</p>
                 <p id="stateDisclaimer" class="state-disclaimer" style="display: none;">Research visualization only. Not for medical diagnosis.</p>
@@ -92,9 +120,19 @@
                 <div id="brainPlaceholder" class="brain-placeholder">
                     <span id="brainPulse" class="brain-pulse relaxed"></span>
                 </div>
+                <div class="mini-stats">
+                    <div class="mini-stat">
+                        <span class="mini-label">Current</span>
+                        <strong id="currentLabelBadge">—</strong>
+                    </div>
+                    <div class="mini-stat">
+                        <span class="mini-label">Session Dominant</span>
+                        <strong id="dominantLabelBadge">—</strong>
+                    </div>
+                </div>
             </div>
             <div class="explain-state">
-                <h3>Explain the state</h3>
+                <h3 id="explainPanelTitle">Explain the state</h3>
                 <p id="stateExplanation" class="state-explanation">Train the first model, then load a session to see how the prediction changes over time.</p>
             </div>
         </section>
@@ -104,6 +142,6 @@
         <p>Brain State Dashboard — Research &amp; visualization only. Not for medical diagnosis or treatment.</p>
     </footer>
 
-    <script src="{{ request.url_for('static', path='dashboard.js') }}?v=13"></script>
+    <script src="{{ request.url_for('static', path='dashboard.js') }}?v=14"></script>
 </body>
 </html>
