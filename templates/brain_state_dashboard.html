@@ -116,10 +116,23 @@
                 <p id="stateDisclaimer" class="state-disclaimer" style="display: none;">Research visualization only. Not for medical diagnosis.</p>
             </div>
             <div class="brain-visual">
-                <span class="brain-label">Playback</span>
+                <span id="simulationTitle" class="brain-label">Playback Simulation</span>
                 <div id="brainPlaceholder" class="brain-placeholder">
-                    <span id="brainPulse" class="brain-pulse relaxed"></span>
+                    <div id="simulationScene" class="simulation-scene state-relaxed">
+                        <div id="simulationAura" class="simulation-aura"></div>
+                        <div id="simulationAvatar" class="simulation-avatar">
+                            <span class="avatar-head"></span>
+                            <span class="avatar-torso"></span>
+                            <span class="avatar-arm avatar-arm-left"></span>
+                            <span class="avatar-arm avatar-arm-right"></span>
+                            <span class="avatar-leg avatar-leg-left"></span>
+                            <span class="avatar-leg avatar-leg-right"></span>
+                        </div>
+                        <div class="simulation-ground"></div>
+                        <div id="simulationIntent" class="simulation-intent">Idle</div>
+                    </div>
                 </div>
+                <p id="simulationCaption" class="simulation-caption">The playback pulse reflects the current model output.</p>
                 <div class="mini-stats">
                     <div class="mini-stat">
                         <span class="mini-label">Current</span>

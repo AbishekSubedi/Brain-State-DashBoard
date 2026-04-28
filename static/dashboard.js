@@ -19,6 +19,9 @@
             emptyExplanation: 'Train the first model, then load a session to see how the prediction changes over time.',
             statePanelTitle: 'State of Mind',
             explainPanelTitle: 'Explain the state',
+            simulationTitle: 'Playback Simulation',
+            simulationIdle: 'Idle',
+            simulationCaption: 'The playback simulation shifts between calm and engaged states as the window moves.',
             summary: {
                 dataset: 'Shin2017B',
                 classes: 'Relaxed, Focused',
@@ -35,6 +38,9 @@
                 return label === 'Focused'
                     ? 'The model sees a window that looks closer to the Shin2017 subtraction trials than the rest trials.'
                     : 'The model sees a window that looks closer to the Shin2017 rest trials than the subtraction trials.';
+            },
+            simulationClass: function (label) {
+                return label === 'Focused' ? 'state-focused' : 'state-relaxed';
             }
         },
         imagery: {
@@ -50,6 +56,9 @@
             emptyExplanation: 'Train the second model, then load a session to inspect left-vs-right imagery predictions.',
             statePanelTitle: 'Predicted Movement',
             explainPanelTitle: 'Explain the movement',
+            simulationTitle: 'Intent Simulation',
+            simulationIdle: 'Awaiting intent',
+            simulationCaption: 'The avatar raises the arm that matches the current left-vs-right imagery prediction.',
             summary: {
                 dataset: 'Shin2017A',
                 classes: 'Left Hand, Right Hand',
@@ -66,6 +75,9 @@
                 return label === 'Right Hand'
                     ? 'The model sees motor-imagery activity that is closer to the right-hand class in the Shin2017A training data.'
                     : 'The model sees motor-imagery activity that is closer to the left-hand class in the Shin2017A training data.';
+            },
+            simulationClass: function (label) {
+                return label === 'Right Hand' ? 'intent-right' : 'intent-left';
             }
         }
     };
@@ -278,12 +290,18 @@
         });
     }
 
-    function setPulseState(label) {
-        var pulse = byId('brainPulse');
-        if (!pulse) return;
-        var pulseClasses = getModeConfig().pulseClasses;
-        pulse.classList.remove('focused', 'relaxed', 'left', 'right');
-        pulse.classList.add(label === getModeConfig().legend[1].label ? pulseClasses.secondary : pulseClasses.primary);
+    function updateSimulation(label) {
+        var scene = byId('simulationScene');
+        var intent = byId('simulationIntent');
+        if (!scene || !intent) return;
+        scene.classList.remove('state-relaxed', 'state-focused', 'intent-left', 'intent-right', 'is-idle');
+        if (!label) {
+            scene.classList.add('is-idle');
+            intent.textContent = getModeConfig().simulationIdle;
+            return;
+        }
+        scene.classList.add(getModeConfig().simulationClass(label));
+        intent.textContent = label;
     }
 
     function renderCurrentState() {
@@ -304,6 +322,7 @@
             if (currentLabelBadge) currentLabelBadge.textContent = '—';
             if (dominantLabelBadge) dominantLabelBadge.textContent = '—';
             if (disclaimerEl) disclaimerEl.style.display = 'none';
+            updateSimulation(null);
             return;
         }
 
@@ -318,7 +337,7 @@
         if (currentLabelBadge) currentLabelBadge.textContent = current.label;
         if (dominantLabelBadge) dominantLabelBadge.textContent = playback.summary.dominant_label;
         if (disclaimerEl) disclaimerEl.style.display = 'block';
-        setPulseState(current.label);
+        updateSimulation(current.label);
     }
 
     function stopPlayback() {
@@ -514,6 +533,8 @@
         var legendSwatchB = byId('legendSwatchB');
         var statePanelTitle = byId('statePanelTitle');
         var explainPanelTitle = byId('explainPanelTitle');
+        var simulationTitle = byId('simulationTitle');
+        var simulationCaption = byId('simulationCaption');
 
         document.querySelectorAll('.model-chip').forEach(function (chip) {
             chip.classList.toggle('active', chip.dataset.modelMode === activeMode);
@@ -532,6 +553,8 @@
         if (legendSwatchB) legendSwatchB.className = 'swatch ' + config.legend[1].swatchClass;
         if (statePanelTitle) statePanelTitle.textContent = config.statePanelTitle;
         if (explainPanelTitle) explainPanelTitle.textContent = config.explainPanelTitle;
+        if (simulationTitle) simulationTitle.textContent = config.simulationTitle;
+        if (simulationCaption) simulationCaption.textContent = config.simulationCaption;
         setText('summaryDataset', config.summary.dataset);
         setText('summaryClasses', config.summary.classes);
         setText('summaryBaseline', config.summary.baseline);
@@ -539,6 +562,7 @@
 
         playback = null;
         stopPlayback();
+        updateSimulation(null);
         renderCurrentState();
         renderTimelineBar();
         renderChart();
