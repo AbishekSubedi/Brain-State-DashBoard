@@ -403,14 +403,13 @@ body {
 
 .state-section {
     display: grid;
-    grid-template-columns: 1fr minmax(140px, 200px) 1fr;
-    gap: 24px;
+    grid-template-columns: minmax(0, 1.7fr) minmax(260px, 0.85fr);
+    gap: 22px;
     align-items: start;
     margin-bottom: 32px;
 }
 
-.state-of-mind h3,
-.explain-state h3 {
+.state-of-mind h3 {
     font-size: 1rem;
     font-weight: 600;
     margin: 0 0 8px 0;
@@ -419,10 +418,17 @@ body {
 
 .state-summary,
 .state-confidence,
-.state-explanation,
 .state-disclaimer {
     margin: 0;
     font-size: 0.95rem;
+}
+
+.state-of-mind {
+    min-height: 100%;
+    padding: 18px;
+    background: linear-gradient(180deg, rgba(22, 49, 79, 0.78), rgba(8, 20, 35, 0.76));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius);
 }
 
 .state-confidence {
@@ -431,7 +437,7 @@ body {
 }
 
 .state-disclaimer {
-    margin-top: 10px;
+    margin-top: 14px;
     font-size: 0.8rem;
     color: var(--muted);
 }
@@ -439,18 +445,20 @@ body {
 .brain-visual {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 12px;
+    gap: 14px;
 }
 
 .brain-label {
-    font-size: 0.8rem;
+    font-size: 0.86rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
     color: var(--muted);
 }
 
 .brain-placeholder {
     width: 100%;
-    min-height: 220px;
+    min-height: 340px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -460,30 +468,67 @@ body {
 .simulation-scene {
     position: relative;
     width: 100%;
-    min-height: 220px;
+    min-height: 340px;
     display: flex;
     align-items: flex-end;
     justify-content: center;
     overflow: hidden;
-    border-radius: 16px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
     background:
-        radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.09), transparent 24%),
-        linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
+        radial-gradient(circle at 50% 14%, rgba(255, 255, 255, 0.1), transparent 24%),
+        linear-gradient(180deg, rgba(28, 54, 89, 0.96), rgba(10, 18, 32, 0.98));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.simulation-target {
+    position: absolute;
+    top: 74px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted);
+    transition: transform 180ms ease, opacity 180ms ease;
+}
+
+.simulation-target-left {
+    left: 34px;
+}
+
+.simulation-target-right {
+    right: 34px;
+}
+
+.target-orb {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.16);
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.02));
+    box-shadow: inset 0 0 18px rgba(255, 255, 255, 0.06);
+}
+
+.target-label {
+    font-size: 0.84rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
 }
 
 .simulation-aura {
     position: absolute;
-    inset: 18px 26px 54px;
+    inset: 28px 80px 78px;
     border-radius: 50%;
-    filter: blur(10px);
+    filter: blur(14px);
     opacity: 0.72;
     transition: background 180ms ease, transform 180ms ease, opacity 180ms ease;
 }
 
 .simulation-avatar {
     position: relative;
-    width: 140px;
-    height: 180px;
+    width: 190px;
+    height: 250px;
     transition: transform 180ms ease;
 }
 
@@ -498,92 +543,94 @@ body {
 }
 
 .avatar-head {
-    width: 34px;
-    height: 34px;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
-    left: 53px;
-    top: 10px;
+    left: 71px;
+    top: 16px;
 }
 
 .avatar-torso {
-    width: 44px;
-    height: 78px;
-    left: 48px;
-    top: 46px;
-    border-radius: 24px;
+    width: 58px;
+    height: 108px;
+    left: 66px;
+    top: 72px;
+    border-radius: 32px;
 }
 
 .avatar-arm {
-    width: 14px;
-    height: 72px;
-    top: 52px;
-    border-radius: 20px;
+    width: 18px;
+    height: 102px;
+    top: 80px;
+    border-radius: 22px;
     transform-origin: top center;
     transition: transform 220ms ease, background 180ms ease;
 }
 
 .avatar-arm-left {
-    left: 35px;
+    left: 50px;
     transform: rotate(16deg);
 }
 
 .avatar-arm-right {
-    right: 35px;
+    right: 50px;
     transform: rotate(-16deg);
 }
 
 .avatar-leg {
-    width: 16px;
-    height: 70px;
-    top: 114px;
+    width: 20px;
+    height: 96px;
+    top: 166px;
     border-radius: 20px;
 }
 
 .avatar-leg-left {
-    left: 48px;
+    left: 68px;
     transform: rotate(6deg);
 }
 
 .avatar-leg-right {
-    right: 48px;
+    right: 68px;
     transform: rotate(-6deg);
 }
 
 .simulation-ground {
     position: absolute;
-    left: 24px;
-    right: 24px;
-    bottom: 26px;
-    height: 8px;
+    left: 34px;
+    right: 34px;
+    bottom: 34px;
+    height: 10px;
     border-radius: 999px;
-    background: linear-gradient(90deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.04));
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.20), rgba(255, 255, 255, 0.04));
 }
 
 .simulation-intent {
     position: absolute;
-    top: 16px;
-    left: 16px;
-    padding: 6px 10px;
+    top: 18px;
+    left: 18px;
+    padding: 8px 12px;
     border-radius: 999px;
     background: rgba(8, 17, 31, 0.68);
     border: 1px solid rgba(255, 255, 255, 0.08);
     color: var(--text);
-    font-size: 0.82rem;
+    font-size: 0.88rem;
+    font-weight: 700;
     letter-spacing: 0.02em;
 }
 
 .simulation-caption {
     margin: 0;
     color: var(--muted);
-    text-align: center;
-    font-size: 0.83rem;
+    font-size: 0.88rem;
+    max-width: 62ch;
 }
 
 .mini-stats {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     gap: 10px;
     width: 100%;
+    margin-top: 18px;
 }
 
 .mini-stat {
@@ -630,13 +677,29 @@ body {
 }
 
 .simulation-scene.intent-left .avatar-arm-left {
-    transform: rotate(-42deg) translateY(-6px);
+    transform: rotate(-68deg) translate(-10px, -10px);
     background: linear-gradient(180deg, rgba(121, 200, 255, 0.98), rgba(147, 214, 255, 0.84));
 }
 
 .simulation-scene.intent-right .avatar-arm-right {
-    transform: rotate(42deg) translateY(-6px);
+    transform: rotate(68deg) translate(10px, -10px);
     background: linear-gradient(180deg, rgba(255, 123, 139, 0.98), rgba(255, 169, 135, 0.84));
+}
+
+.simulation-scene.target-left-active .simulation-target-left,
+.simulation-scene.target-right-active .simulation-target-right {
+    transform: translateY(-8px) scale(1.04);
+    color: var(--text);
+}
+
+.simulation-scene.target-left-active .simulation-target-left .target-orb {
+    border-color: rgba(121, 200, 255, 0.9);
+    box-shadow: 0 0 28px rgba(121, 200, 255, 0.34), inset 0 0 18px rgba(121, 200, 255, 0.18);
+}
+
+.simulation-scene.target-right-active .simulation-target-right .target-orb {
+    border-color: rgba(255, 123, 139, 0.9);
+    box-shadow: 0 0 28px rgba(255, 123, 139, 0.34), inset 0 0 18px rgba(255, 123, 139, 0.18);
 }
 
 .simulation-scene.state-relaxed .avatar-torso,

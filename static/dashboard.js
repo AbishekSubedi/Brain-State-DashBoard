@@ -7,7 +7,6 @@
     var activeMode = 'state';
     var MODEL_CONFIG = {
         state: {
-            mode: 'state',
             headline: 'Shin2017 First Model',
             intro: "This version of the dashboard uses the Shin2017 study as the first training source. For the current model, the usable state labels come from the study\\'s mental arithmetic split: rest = relaxed and subtraction = focused. Train the model, choose a subject and session, then watch the EEG bands and predicted state move through the session timeline.",
             statusUrl: '/api/model/status',
@@ -16,12 +15,10 @@
             sessionsUrl: '/api/sessions?kind=state',
             trainButtonLabel: 'Train First Model',
             loadHint: 'Choose a subject and arithmetic session to load playback data.',
-            emptyExplanation: 'Train the first model, then load a session to see how the prediction changes over time.',
             statePanelTitle: 'State of Mind',
-            explainPanelTitle: 'Explain the state',
             simulationTitle: 'Playback Simulation',
             simulationIdle: 'Idle',
-            simulationCaption: 'The playback simulation shifts between calm and engaged states as the window moves.',
+            simulationCaption: 'The simulation shifts between calm and engaged states as the current prediction changes.',
             summary: {
                 dataset: 'Shin2017B',
                 classes: 'Relaxed, Focused',
@@ -33,18 +30,11 @@
                 { label: 'Focused', swatchClass: 'swatch-focused' }
             ],
             summaryNoun: 'state',
-            pulseClasses: { primary: 'relaxed', secondary: 'focused' },
-            explainLabel: function (label) {
-                return label === 'Focused'
-                    ? 'The model sees a window that looks closer to the Shin2017 subtraction trials than the rest trials.'
-                    : 'The model sees a window that looks closer to the Shin2017 rest trials than the subtraction trials.';
-            },
             simulationClass: function (label) {
                 return label === 'Focused' ? 'state-focused' : 'state-relaxed';
             }
         },
         imagery: {
-            mode: 'imagery',
             headline: 'Shin2017 Second Model',
             intro: 'The second model uses Shin2017A motor-imagery trials to classify left-hand versus right-hand intent. Train the imagery model, choose a subject and session, then step through the EEG playback to see the predicted movement side change over time.',
             statusUrl: '/api/model/imagery/status',
@@ -53,12 +43,10 @@
             sessionsUrl: '/api/sessions?kind=imagery',
             trainButtonLabel: 'Train Second Model',
             loadHint: 'Choose a subject and imagery session to load left-vs-right playback data.',
-            emptyExplanation: 'Train the second model, then load a session to inspect left-vs-right imagery predictions.',
             statePanelTitle: 'Predicted Movement',
-            explainPanelTitle: 'Explain the movement',
             simulationTitle: 'Intent Simulation',
             simulationIdle: 'Awaiting intent',
-            simulationCaption: 'The avatar raises the arm that matches the current left-vs-right imagery prediction.',
+            simulationCaption: 'The avatar raises the arm that matches the current left-vs-right imagery prediction and highlights the active target.',
             summary: {
                 dataset: 'Shin2017A',
                 classes: 'Left Hand, Right Hand',
@@ -70,12 +58,6 @@
                 { label: 'Right Hand', swatchClass: 'swatch-right' }
             ],
             summaryNoun: 'movement',
-            pulseClasses: { primary: 'left', secondary: 'right' },
-            explainLabel: function (label) {
-                return label === 'Right Hand'
-                    ? 'The model sees motor-imagery activity that is closer to the right-hand class in the Shin2017A training data.'
-                    : 'The model sees motor-imagery activity that is closer to the left-hand class in the Shin2017A training data.';
-            },
             simulationClass: function (label) {
                 return label === 'Right Hand' ? 'intent-right' : 'intent-left';
             }
@@ -293,31 +275,44 @@
     function updateSimulation(label) {
         var scene = byId('simulationScene');
         var intent = byId('simulationIntent');
+        var config = getModeConfig();
         if (!scene || !intent) return;
-        scene.classList.remove('state-relaxed', 'state-focused', 'intent-left', 'intent-right', 'is-idle');
+        scene.classList.remove(
+            'state-relaxed',
+            'state-focused',
+            'intent-left',
+            'intent-right',
+            'is-idle',
+            'target-left-active',
+            'target-right-active'
+        );
         if (!label) {
             scene.classList.add('is-idle');
-            intent.textContent = getModeConfig().simulationIdle;
+            intent.textContent = config.simulationIdle;
             return;
         }
-        scene.classList.add(getModeConfig().simulationClass(label));
+        var sceneClass = config.simulationClass(label);
+        scene.classList.add(sceneClass);
+        if (sceneClass === 'intent-left') {
+            scene.classList.add('target-left-active');
+        } else if (sceneClass === 'intent-right') {
+            scene.classList.add('target-right-active');
+        }
         intent.textContent = label;
     }
 
     function renderCurrentState() {
         var summaryEl = byId('stateSummary');
         var confidenceEl = byId('stateConfidence');
-        var explanationEl = byId('stateExplanation');
         var disclaimerEl = byId('stateDisclaimer');
         var playbackMetaEl = byId('playbackMeta');
         var currentLabelBadge = byId('currentLabelBadge');
         var dominantLabelBadge = byId('dominantLabelBadge');
-        if (!summaryEl || !confidenceEl || !explanationEl || !playbackMetaEl) return;
+        if (!summaryEl || !confidenceEl || !playbackMetaEl) return;
 
         if (!playback || !playback.timeline.length) {
             summaryEl.textContent = '—';
             confidenceEl.textContent = 'Confidence —';
-            explanationEl.textContent = getModeConfig().emptyExplanation;
             playbackMetaEl.textContent = 'The prediction label will update as playback moves through the session.';
             if (currentLabelBadge) currentLabelBadge.textContent = '—';
             if (dominantLabelBadge) dominantLabelBadge.textContent = '—';
@@ -330,7 +325,6 @@
         var displayTime = Math.max(0, current.start);
         summaryEl.textContent = current.label;
         confidenceEl.textContent = 'Confidence ' + Math.round(current.confidence * 100) + '%';
-        explanationEl.textContent = getModeConfig().explainLabel(current.label);
         playbackMetaEl.textContent =
             'Window ' + (timelineIndex + 1) + ' of ' + playback.timeline.length +
             ' at ' + displayTime.toFixed(1) + 's in ' + playback.session_name + '.';
@@ -532,7 +526,6 @@
         var legendSwatchA = byId('legendSwatchA');
         var legendSwatchB = byId('legendSwatchB');
         var statePanelTitle = byId('statePanelTitle');
-        var explainPanelTitle = byId('explainPanelTitle');
         var simulationTitle = byId('simulationTitle');
         var simulationCaption = byId('simulationCaption');
 
@@ -552,7 +545,6 @@
         if (legendSwatchA) legendSwatchA.className = 'swatch ' + config.legend[0].swatchClass;
         if (legendSwatchB) legendSwatchB.className = 'swatch ' + config.legend[1].swatchClass;
         if (statePanelTitle) statePanelTitle.textContent = config.statePanelTitle;
-        if (explainPanelTitle) explainPanelTitle.textContent = config.explainPanelTitle;
         if (simulationTitle) simulationTitle.textContent = config.simulationTitle;
         if (simulationCaption) simulationCaption.textContent = config.simulationCaption;
         setText('summaryDataset', config.summary.dataset);

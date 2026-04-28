@@ -109,16 +109,18 @@
         </section>
 
         <section class="state-section">
-            <div class="state-of-mind">
-                <h3 id="statePanelTitle">State of Mind</h3>
-                <p id="stateSummary" class="state-summary">—</p>
-                <p id="stateConfidence" class="state-confidence">Confidence —</p>
-                <p id="stateDisclaimer" class="state-disclaimer" style="display: none;">Research visualization only. Not for medical diagnosis.</p>
-            </div>
             <div class="brain-visual">
                 <span id="simulationTitle" class="brain-label">Playback Simulation</span>
                 <div id="brainPlaceholder" class="brain-placeholder">
                     <div id="simulationScene" class="simulation-scene state-relaxed">
+                        <div class="simulation-target simulation-target-left">
+                            <span class="target-orb"></span>
+                            <span class="target-label">Left</span>
+                        </div>
+                        <div class="simulation-target simulation-target-right">
+                            <span class="target-orb"></span>
+                            <span class="target-label">Right</span>
+                        </div>
                         <div id="simulationAura" class="simulation-aura"></div>
                         <div id="simulationAvatar" class="simulation-avatar">
                             <span class="avatar-head"></span>
@@ -133,6 +135,11 @@
                     </div>
                 </div>
                 <p id="simulationCaption" class="simulation-caption">The playback pulse reflects the current model output.</p>
+            </div>
+            <div class="state-of-mind">
+                <h3 id="statePanelTitle">State of Mind</h3>
+                <p id="stateSummary" class="state-summary">—</p>
+                <p id="stateConfidence" class="state-confidence">Confidence —</p>
                 <div class="mini-stats">
                     <div class="mini-stat">
                         <span class="mini-label">Current</span>
@@ -143,10 +150,7 @@
                         <strong id="dominantLabelBadge">—</strong>
                     </div>
                 </div>
-            </div>
-            <div class="explain-state">
-                <h3 id="explainPanelTitle">Explain the state</h3>
-                <p id="stateExplanation" class="state-explanation">Train the first model, then load a session to see how the prediction changes over time.</p>
+                <p id="stateDisclaimer" class="state-disclaimer" style="display: none;">Research visualization only. Not for medical diagnosis.</p>
             </div>
         </section>
     </main>
@@ -155,6 +159,6 @@
         <p>Brain State Dashboard — Research &amp; visualization only. Not for medical diagnosis or treatment.</p>
     </footer>
 
-    <script src="{{ request.url_for('static', path='dashboard.js') }}?v=14"></script>
+    <script src="{{ request.url_for('static', path='dashboard.js') }}?v=15"></script>
 </body>
 </html>
