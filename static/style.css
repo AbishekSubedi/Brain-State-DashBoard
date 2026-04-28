@@ -450,11 +450,133 @@ body {
 
 .brain-placeholder {
     width: 100%;
-    min-height: 120px;
+    min-height: 220px;
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
+}
+
+.simulation-scene {
+    position: relative;
+    width: 100%;
+    min-height: 220px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 16px;
+    background:
+        radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.09), transparent 24%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
+}
+
+.simulation-aura {
+    position: absolute;
+    inset: 18px 26px 54px;
+    border-radius: 50%;
+    filter: blur(10px);
+    opacity: 0.72;
+    transition: background 180ms ease, transform 180ms ease, opacity 180ms ease;
+}
+
+.simulation-avatar {
+    position: relative;
+    width: 140px;
+    height: 180px;
+    transition: transform 180ms ease;
+}
+
+.avatar-head,
+.avatar-torso,
+.avatar-arm,
+.avatar-leg {
+    position: absolute;
+    display: block;
+    background: linear-gradient(180deg, rgba(237, 243, 255, 0.96), rgba(177, 193, 223, 0.82));
+    box-shadow: 0 8px 22px rgba(7, 12, 24, 0.25);
+}
+
+.avatar-head {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    left: 53px;
+    top: 10px;
+}
+
+.avatar-torso {
+    width: 44px;
+    height: 78px;
+    left: 48px;
+    top: 46px;
+    border-radius: 24px;
+}
+
+.avatar-arm {
+    width: 14px;
+    height: 72px;
+    top: 52px;
+    border-radius: 20px;
+    transform-origin: top center;
+    transition: transform 220ms ease, background 180ms ease;
+}
+
+.avatar-arm-left {
+    left: 35px;
+    transform: rotate(16deg);
+}
+
+.avatar-arm-right {
+    right: 35px;
+    transform: rotate(-16deg);
+}
+
+.avatar-leg {
+    width: 16px;
+    height: 70px;
+    top: 114px;
+    border-radius: 20px;
+}
+
+.avatar-leg-left {
+    left: 48px;
+    transform: rotate(6deg);
+}
+
+.avatar-leg-right {
+    right: 48px;
+    transform: rotate(-6deg);
+}
+
+.simulation-ground {
+    position: absolute;
+    left: 24px;
+    right: 24px;
+    bottom: 26px;
+    height: 8px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.04));
+}
+
+.simulation-intent {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(8, 17, 31, 0.68);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text);
+    font-size: 0.82rem;
+    letter-spacing: 0.02em;
+}
+
+.simulation-caption {
+    margin: 0;
+    color: var(--muted);
+    text-align: center;
+    font-size: 0.83rem;
 }
 
 .mini-stats {
@@ -480,37 +602,51 @@ body {
     letter-spacing: 0.05em;
 }
 
-.brain-pulse {
-    width: 82px;
-    height: 82px;
-    border-radius: 50%;
-    transition: background 160ms ease, box-shadow 160ms ease;
-    animation: pulse 1.4s ease-in-out infinite;
+.simulation-scene.is-idle .simulation-aura {
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02));
+    opacity: 0.42;
 }
 
-.brain-pulse.relaxed {
-    background: radial-gradient(circle, rgba(120, 224, 181, 0.95), rgba(104, 187, 154, 0.25));
-    box-shadow: 0 0 32px rgba(120, 224, 181, 0.35);
+.simulation-scene.state-relaxed .simulation-aura {
+    background: radial-gradient(circle, rgba(120, 224, 181, 0.48), rgba(120, 224, 181, 0.05));
+    transform: scale(0.96);
 }
 
-.brain-pulse.focused {
-    background: radial-gradient(circle, rgba(255, 159, 64, 0.95), rgba(255, 159, 64, 0.2));
-    box-shadow: 0 0 32px rgba(255, 159, 64, 0.32);
+.simulation-scene.state-focused .simulation-aura {
+    background: radial-gradient(circle, rgba(255, 159, 64, 0.48), rgba(255, 159, 64, 0.05));
+    transform: scale(1.04);
 }
 
-.brain-pulse.left {
-    background: radial-gradient(circle, rgba(121, 200, 255, 0.95), rgba(121, 200, 255, 0.18));
-    box-shadow: 0 0 32px rgba(121, 200, 255, 0.3);
+.simulation-scene.intent-left .simulation-aura {
+    background: radial-gradient(circle at 36% 36%, rgba(121, 200, 255, 0.56), rgba(121, 200, 255, 0.06));
 }
 
-.brain-pulse.right {
-    background: radial-gradient(circle, rgba(255, 123, 139, 0.95), rgba(255, 123, 139, 0.18));
-    box-shadow: 0 0 32px rgba(255, 123, 139, 0.3);
+.simulation-scene.intent-right .simulation-aura {
+    background: radial-gradient(circle at 64% 36%, rgba(255, 123, 139, 0.56), rgba(255, 123, 139, 0.06));
 }
 
-@keyframes pulse {
-    0%, 100% { transform: scale(0.92); }
-    50% { transform: scale(1.06); }
+.simulation-scene.state-focused .simulation-avatar {
+    transform: translateY(-4px) scale(1.03);
+}
+
+.simulation-scene.intent-left .avatar-arm-left {
+    transform: rotate(-42deg) translateY(-6px);
+    background: linear-gradient(180deg, rgba(121, 200, 255, 0.98), rgba(147, 214, 255, 0.84));
+}
+
+.simulation-scene.intent-right .avatar-arm-right {
+    transform: rotate(42deg) translateY(-6px);
+    background: linear-gradient(180deg, rgba(255, 123, 139, 0.98), rgba(255, 169, 135, 0.84));
+}
+
+.simulation-scene.state-relaxed .avatar-torso,
+.simulation-scene.state-relaxed .avatar-head {
+    background: linear-gradient(180deg, rgba(219, 255, 241, 0.96), rgba(152, 222, 194, 0.82));
+}
+
+.simulation-scene.state-focused .avatar-torso,
+.simulation-scene.state-focused .avatar-head {
+    background: linear-gradient(180deg, rgba(255, 227, 196, 0.96), rgba(255, 173, 86, 0.84));
 }
 
 .site-footer {

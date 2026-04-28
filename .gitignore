@@ -208,3 +208,7 @@ __marimo__/
 
 # Local model artifacts
 artifacts/
+
+# Poster Figures and Scripts
+poster_figures/
+scripts/
